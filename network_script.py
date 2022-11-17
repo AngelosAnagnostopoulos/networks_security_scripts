@@ -47,6 +47,8 @@ def ping(host):
     except subprocess.TimeoutExpired:
         host.blocksICMP = True
         print("Host does not seem to receive ICMP echo packages.")
+    except subprocess.CalledProcessError as err:
+        print(err)
 
 def discover(host):
     nmap_discover = nmap3.NmapHostDiscovery()
@@ -166,8 +168,9 @@ def check_ports(host):
 def main():
 
     ### Testing data for my raspberryPi ###
-    hosts = [HostMachine("192.168.1.115", "up1066593")]
-
+    raspberry = [HostMachine("192.168.1.115", "up1066593")]
+    localVMs = [HostMachine("192.168.123.122", "up1066593")]
+    hosts = localVMs
     ### Parse the file and create the hosts list ###
     # with open("student_info.csv", "r") as f:
 
