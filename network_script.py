@@ -46,7 +46,7 @@ def ping(host):
             ping, shell=True, timeout=timeoutSeconds)
     except subprocess.TimeoutExpired:
         host.blocksICMP = True
-
+        print("Host does not seem to receive ICMP echo packages.")
 
 def discover(host):
     nmap_discover = nmap3.NmapHostDiscovery()
@@ -93,6 +93,8 @@ def send_XMAS(host):
 
 def ssh_connect(host):
     # SSH Password login
+    # If end users only allow public key logins, then they are automatically stopped by the ssh server from entering
+    # Fail2ban mode must be set on aggressive on jail.local for the ssh jail
 
     username = "debian"
     password = ""
@@ -105,21 +107,25 @@ def ssh_connect(host):
         print(_stdout.read().decode())
     except paramiko.ssh_exception.BadAuthenticationType:
         print("Password logins are not allowed on machine{}.\n".format(host.adr))
+    except Exception as e:
+        print(e)
     finally:
         client.close()
         host.hasSSHServer = True
 
 
 def fail2ban_test(host):
-    # Try to connect with ssh 5 times and check for a different error on the sixth one
-    pass
+    
+    for i in range(5):
+        ssh_connect(host)
+       
 
 
 def grade(hosts):
 
     print("Student's grades are:")
     print("---------------------")
-    print("AM: \t\tIP address:   \tGrade: ")
+    print("AM: \t\tIP address: \tGrade: ")
     for host in hosts:
         ### Firewall ###
         if host.blocksICMP:
@@ -138,7 +144,7 @@ def grade(hosts):
         else:
             host.grade = 0
 
-        print("{}\t{}\t  {}/10".format(host.id, host.adr, host.grade))
+        print("{}\t{}\t{}/10".format(host.id, host.adr, host.grade))
 
 
 def check_ports(host):
