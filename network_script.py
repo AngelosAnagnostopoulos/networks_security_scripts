@@ -1,6 +1,5 @@
 # A basic script to check firewall setup, ssh connectivity,
-# fail2ban setup and open ports on a system by utilising
-# standard UNIX networking commands
+# and open ports on a system
 
 import pprint
 import os
@@ -29,10 +28,7 @@ class HostMachine:
         self.blocksXMAS = False
 
         # SSH related
-        self.hasFail2ban = False
-        self.hasSSHServer = False
-
-        self.grade = 0
+        self.blocksPass = False
 
     def updatePorts(self, portid):
         self.openPorts.append(portid)
@@ -95,11 +91,9 @@ def send_XMAS(host):
 
 def ssh_connect(host):
     # SSH Password login
-    # If end users only allow public key logins, then they are automatically stopped by the ssh server from entering
-    # Fail2ban mode must be set on aggressive on jail.local for the ssh jail
 
     username = "debian"
-    password = ""
+    password = "le_mao"
 
     client = paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -109,44 +103,11 @@ def ssh_connect(host):
         print(_stdout.read().decode())
     except paramiko.ssh_exception.BadAuthenticationType:
         print("Password logins are not allowed on machine{}.\n".format(host.adr))
+        host.blocksPass = True
     except Exception as e:
         print(e)
     finally:
         client.close()
-        host.hasSSHServer = True
-
-
-def fail2ban_test(host):
-    
-    for i in range(5):
-        ssh_connect(host)
-       
-
-
-def grade(hosts):
-
-    print("Student's grades are:")
-    print("---------------------")
-    print("AM: \t\tIP address: \tGrade: ")
-    for host in hosts:
-        ### Firewall ###
-        if host.blocksICMP:
-            host.grade += 1
-        if host.blocksXMAS:
-            host.grade += 1
-        if host.blocksFlood:
-            host.grade += 1
-        ### SSH/Fail2Ban ###
-        if host.hasSSHServer:
-            host.grade += 2
-        if host.hasFail2ban:
-            host.grade += 3
-        if host.isLive:
-            host.grade += 1
-        else:
-            host.grade = 0
-
-        print("{}\t{}\t{}/10".format(host.id, host.adr, host.grade))
 
 
 def check_ports(host):
@@ -167,25 +128,20 @@ def check_ports(host):
 
 def main():
 
-    ### Testing data for my raspberryPi ###
     raspberry = [HostMachine("192.168.1.115", "up1066593")]
     localVMs = [HostMachine("192.168.123.122", "up1066593")]
-    hosts = localVMs
+    hosts = raspberry
+
     ### Parse the file and create the hosts list ###
     # with open("student_info.csv", "r") as f:
 
     for host in hosts:
-        ### Check the firewall ###
         check_ports(host)
         ping(host)
         syn_flood(host)
         send_XMAS(host)
-        ### Check SSH connectivity ###
         ssh_connect(host)
-        # fail2ban_test(hosts)
 
-    ### Grade student work ###
-    grade(hosts)
 
 
 if __name__ == "__main__":
